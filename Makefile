@@ -25,7 +25,7 @@ DOCKER_WORKDIR?=/go/src/github.com/argoproj/argo-cd
 
 ARGOCD_PROCFILE?=Procfile
 
-# Strict mode has been disabled in latest versions of mkdocs-material. 
+# Strict mode has been disabled in latest versions of mkdocs-material.
 # Thus pointing to the older image of mkdocs-material matching the version used by argo-cd.
 MKDOCS_DOCKER_IMAGE?=squidfunk/mkdocs-material:4.1.1
 MKDOCS_RUN_ARGS?=
@@ -113,7 +113,7 @@ define run-in-test-client
 		bash -c "$(1)"
 endef
 
-# 
+#
 define exec-in-test-server
 	docker exec -it -u $(shell id -u):$(shell id -g) -e ARGOCD_E2E_K3S=$(ARGOCD_E2E_K3S) argocd-test-server $(1)
 endef
@@ -205,8 +205,14 @@ clientgen: ensure-gopath
 
 .PHONY: clidocsgen
 clidocsgen: ensure-gopath
-	go run tools/cmd-docs/main.go	
+	go run tools/cmd-docs/main.go
 
+.PHONY: codegen-protogen-local
+codegen-protogen-local: ensure-gopath mod-vendor-local gogen protogen
+
+.PHONY: codegen-protogen
+codegen-protogen: test-tools-image
+	$(call run-in-test-client,make codegen-protogen-local)
 
 .PHONY: codegen-local
 codegen-local: ensure-gopath mod-vendor-local notification-docs notification-catalog gogen protogen clientgen openapigen clidocsgen manifests-local
@@ -309,7 +315,11 @@ mod-download: test-tools-image
 
 .PHONY: mod-download-local
 mod-download-local:
+ifdef SKIP_GO_MOD
+	@echo "skipping go mod download && go mod tidy"
+else
 	go mod download && go mod tidy # go mod download changes go.sum https://github.com/golang/go/issues/42970
+endif
 
 .PHONY: mod-vendor
 mod-vendor: test-tools-image
@@ -317,7 +327,11 @@ mod-vendor: test-tools-image
 
 .PHONY: mod-vendor-local
 mod-vendor-local: mod-download-local
+ifdef SKIP_GO_MOD
+	@echo "skipping go mod vendor"
+else
 	go mod vendor
+endif
 
 # Deprecated - replace by install-local-tools
 .PHONY: install-lint-tools
