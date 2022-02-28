@@ -62,6 +62,7 @@ message ApplicationCreateRequest {
 	required github.com.argoproj.argo_cd.v2.pkg.apis.application.v1alpha1.Application application = 1 [(gogoproto.nullable) = false];
 	optional bool upsert = 2;
 	optional bool validate = 3;
+	optional bool dryRun = 4;
 }
 
 message ApplicationUpdateRequest {
